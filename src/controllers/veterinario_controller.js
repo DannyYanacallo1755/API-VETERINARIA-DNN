@@ -1,3 +1,6 @@
+import Veterinario from "../models/Veterinario.js"
+
+
 // Metodo para el login
 const login =(req,res)=>{
     res.status(200).json({res:'login del veterinario'})
@@ -7,9 +10,27 @@ const perfil=(req,res)=>{
     res.status(200).json({res:'perfil del veterinario'})
 }
 // Metodo para el registro
-const registro =(req,res)=>{
-    res.status(200).json({res:'registro de un nuevo veterinario'})
+const registro = async (req,res)=>{
+    // Desestructurar los campos
+    const {email,password} = req.body
+    // Validar los campos llenos
+    if (Object.values(req.body).includes("")) return res.status(400).json({msg:"Lo sentimos, debes llenar todos los campos"})
+    // Obtenet el usuario de la BDD en base al email
+    const verificarEmailBDD = await Veterinario.findOne({email})
+    // Validar que el email sea nuevo
+    if(verificarEmailBDD) return res.status(400).json({msg:"Lo sentimos, el email ya se encuentra registrado"})
+    // Crear la instancia del nuevo veterinario
+    const nuevoVeterinario = new Veterinario(req.body)
+    // encriptar el password
+    nuevoVeterinario.password = await nuevoVeterinario.encrypPassword(password)
+    // crear el token => email
+    nuevoVeterinario.crearToken()
+    // guardar en BDD
+    await nuevoVeterinario.save()
+    // Responder
+    res.status(200).json({nuevoVeterinario})
 }
+
 // Metodo para confirmar el token
 const confirmEmail = (req,res)=>{
     res.status(200).json({res:'confirmar email de registro de veterinario'})
